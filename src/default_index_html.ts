@@ -359,7 +359,7 @@ export const DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
                       labels: labels,
                       datasets: [
                           {
-                              label: 'Asterinas',
+                              label: 'Mariposa',
                               data: asterinasValues,
                               fill: false,
                               backgroundColor: 'rgba(54, 162, 235, 0.2)', 
@@ -431,8 +431,8 @@ export const DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
           const normalizedDataSets = getNormalizedData(dataSets); 
           const labels = Array.from(normalizedDataSets.keys());
           const asterinasValues = Array.from(normalizedDataSets.values());
-          const title = "Normalized performance of Asterinas";
-          const description = "For bandwidth, use Asterinas / Linux; for latency, use Linux / Asterinas. The higher, the better."
+          const title = "Normalized performance of Mariposa";
+          const description = "For bandwidth, use Mariposa / Linux; for latency, use Linux / Mariposa. The higher, the better."
                 
           const nameElem = document.createElement('h1');
           nameElem.className = 'benchmark-title';
