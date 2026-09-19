@@ -35,7 +35,7 @@ echo "Releasing to $version branch..."
 rm -rf dist
 
 set -x
-npm install
+npm ci
 npm run build
 # npm run lint
 # npm test
@@ -48,6 +48,9 @@ cp action.yml package.json package-lock.json .release/
 rsync -R -v dist/src/*.js .release/
 rsync -R -v dist/src/**/*.js .release/
 cp -R node_modules .release/node_modules
+
+# npm prune rewrote the lockfile; keep the tree clean for the branch switch
+git checkout -- package-lock.json package.json
 
 git checkout "$version"
 git pull
