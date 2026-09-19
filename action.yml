@@ -1,0 +1,80 @@
+name: 'Continuous Benchmark'
+author: 'github-action-benchmark developers <https://github.com/benchmark-action>'
+description: 'Continuous Benchmark using GitHub pages as dash board for keeping performance'
+branding:
+  icon: 'fast-forward'
+  color: 'blue'
+
+inputs:
+  output-file-path:
+    description: 'A path, glob pattern, or regular expression matching JSON file(s) which contain the benchmark output and metadata.'
+    required: true
+  gh-pages-branch:
+    description: 'Branch for gh-pages.'
+    required: true
+    default: 'gh-pages'
+  gh-repository:
+    description: 'Optional different repository URL to store benchmark results (e.g., github.com/owner/results-repo).'
+    required: false
+  benchmark-data-dir-path:
+    description: 'Path to directory for benchmark files on the GitHub Pages branch.'
+    required: true
+    default: 'dev/bench'
+  github-token:
+    description: 'GitHub API token for operations like pushing to gh-pages or commenting. Use secrets.GITHUB_TOKEN or a PAT.'
+    required: false
+  ref:
+    description: 'Optional Git ref (branch, tag, commit SHA) to associate the benchmark results with.'
+    required: false
+  auto-push:
+    description: 'Automatically push changes to the GitHub Pages branch. Requires github-token.'
+    required: false
+    default: 'false'
+  skip-fetch-gh-pages:
+    description: 'Skip pulling the GitHub Pages branch before committing updates.'
+    required: false
+    default: 'false'
+  comment-always:
+    description: 'Always post a comment comparing current benchmark results with previous. Requires github-token.'
+    required: false
+    default: 'false'
+  summary-always:
+    description: 'Always generate a job summary with benchmark results.'
+    required: false
+    default: 'false'
+  save-data-file:
+    description: 'Save benchmark data to the external file specified by external-data-json-path instead of gh-pages.'
+    required: false
+    default: 'true' # Default is true for backward compatibility, but often used with external-data-json-path
+  comment-on-alert:
+    description: 'Post a comment when a benchmark result exceeds the alert threshold (from JSON metadata or fail-threshold). Requires github-token.'
+    required: false
+    default: 'false'
+  fail-on-alert:
+    description: 'Fail the workflow step if any benchmark result exceeds the failure threshold (from JSON metadata or fail-threshold).'
+    required: false
+    default: 'false'
+  fail-threshold:
+    description: 'Default failure threshold (e.g., "150%") if not specified in JSON metadata. Used for fail-on-alert.'
+    required: false
+    # Default removed, rely on JSON metadata or handle absence in code
+  alert-comment-cc-users:
+    description: 'Comma-separated list of GitHub usernames to CC on alert comments (e.g., "@user1,@user2").'
+    required: false
+  external-data-json-path:
+    description: 'Path to an external JSON file for storing benchmark data (alternative to gh-pages). Often used with actions/cache.'
+    required: false
+  max-items-in-chart:
+    description: 'Maximum number of data points to show per benchmark in charts. Older entries are removed.'
+    required: false
+  summary-json-path:
+    description: 'Optional path to a separate summary JSON file (distinct from output-file-path).'
+    required: false
+
+  archive-file:
+    description: 'Path to an archive to upload as a release asset. When set, a release tagged with the archive filename is created (or reused) and its URL is recorded on each benchmark point.'
+    required: false
+
+runs:
+  using: 'node20'
+  main: 'dist/src/index.js'
