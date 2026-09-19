@@ -3,6 +3,7 @@ import * as glob from 'glob'; // Added glob import
 import { configFromJobInput } from './config';
 import { extractResult } from './extract';
 import { writeBenchmark } from './write';
+import { releaseTagFromArchive, uploadArchiveToRelease } from './release';
 
 async function main() {
     // Get the file path pattern from input
@@ -18,6 +19,20 @@ async function main() {
         return;
     }
 
+    // Uploaded once for the whole run, not per config file.
+    const archiveFile = core.getInput('archive-file');
+    let releaseUrl: string | undefined;
+    if (archiveFile) {
+        const releaseTag = releaseTagFromArchive(archiveFile);
+        const token = core.getInput('github-token', { required: true });
+        releaseUrl = await uploadArchiveToRelease(
+            archiveFile,
+            releaseTag,
+            token,
+            core.getInput('gh-repository') || undefined,
+        );
+    }
+
     // Process each file
     for (const file of files) {
         core.info(`Processing file: ${file}`);
@@ -30,6 +45,9 @@ async function main() {
 
             // Extract results using the specific config for this file
             const bench = await extractResult(config);
+            if (releaseUrl) {
+                bench.releaseUrl = releaseUrl;
+            }
             core.debug(`Benchmark result extracted for ${file}: ${JSON.stringify(bench)}`);
 
             // Write benchmark data using the specific config

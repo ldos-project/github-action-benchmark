@@ -43,6 +43,7 @@ export interface Benchmark {
     description?: string;
     display?: boolean;
     benches: BenchmarkResult[];
+    releaseUrl?: string;
 }
 
 export interface GoogleCppBenchmarkJson {

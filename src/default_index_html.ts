@@ -141,9 +141,9 @@ export const DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
           function collectBenchesPerTestCase(entries) {
             const map = new Map();
             for (const entry of entries) {
-              const {commit, date, tool, title, description, display, benches} = entry;
+              const {commit, date, tool, title, description, display, benches, releaseUrl} = entry;
               for (const bench of benches) {
-                const result = { commit, date, tool, title, description, display, bench };
+                const result = { commit, date, tool, title, description, display, bench, releaseUrl };
                 const arr = map.get(bench.name);
                 if (arr === undefined) {
                   map.set(bench.name, [result]);
@@ -328,8 +328,15 @@ export const DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
                                     return label;
                                 },
                                 afterLabel: ctx => {
-                                    const { extra } = pointAt(ctx.datasetIndex, ctx.dataIndex).bench;
-                                    return extra ? '\n' + extra : '';
+                                    const point = pointAt(ctx.datasetIndex, ctx.dataIndex);
+                                    const lines = [];
+                                    if (point.bench.extra) {
+                                        lines.push(point.bench.extra);
+                                    }
+                                    if (point.releaseUrl) {
+                                        lines.push('release: ' + point.releaseUrl);
+                                    }
+                                    return lines.length ? '\n' + lines.join('\n') : '';
                                 }
                             }
                         }
@@ -339,7 +346,8 @@ export const DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
                             return;
                         }
                         const { datasetIndex, index } = activeElems[0];
-                        window.open(pointAt(datasetIndex, index).commit.url, '_blank');
+                        const point = pointAt(datasetIndex, index);
+                        window.open(point.releaseUrl || point.commit.url, '_blank');
                     },
                     responsive: true, // Make chart responsive
                     maintainAspectRatio: false // Do not maintain original aspect ratio

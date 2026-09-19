@@ -71,6 +71,10 @@ inputs:
     description: 'Optional path to a separate summary JSON file (distinct from output-file-path).'
     required: false
 
+  archive-file:
+    description: 'Path to an archive to upload as a release asset. When set, a release tagged with the archive filename is created (or reused) and its URL is recorded on each benchmark point.'
+    required: false
+
 runs:
   using: 'node20'
   main: 'dist/src/index.js'
