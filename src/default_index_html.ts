@@ -129,7 +129,7 @@ export const DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
       <div class="small">Powered by <a rel="noopener" href="https://github.com/marketplace/actions/continuous-benchmark">github-action-benchmark</a></div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-tick-configuration"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script> <!-- Include annotation plugin -->
     <script src="./data.js"></script>
@@ -286,6 +286,12 @@ export const DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
                 data: dataset.data.slice(-60)
               }))
             };
+
+            // Sliced to match the chart data so tooltip indices line up.
+            const seriesPoints = [...benchSets.values()].map(points => points.slice(-60));
+            // Tooltip items carry the point index as 'dataIndex', active elements as 'index',
+            // so callers pass the indices explicitly rather than handing over the whole object.
+            const pointAt = (datasetIndex, index) => seriesPoints[datasetIndex][index];
           
             const options = {
                     scales: {
@@ -306,25 +312,25 @@ export const DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
                                 }
                             },
                     },
-                    tooltips: {
-                        callbacks: {
-                            afterTitle: items => {
-                                const {index} = items[0];
-                                const data = dataset[index];
-                                return '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
-                            },
-                            label: item => {
-                                let label = item.value;
-                                const { range, unit } = dataset[item.index].bench;
-                                label += ' ' + unit;
-                                if (range) {
-                                    label += ' (' + range + ')';
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                afterTitle: items => {
+                                    const { commit } = pointAt(items[0].datasetIndex, items[0].dataIndex);
+                                    return '\n' + commit.message + '\n\n' + commit.timestamp + ' committed by @' + commit.committer.username + '\n';
+                                },
+                                label: ctx => {
+                                    const { range, unit } = pointAt(ctx.datasetIndex, ctx.dataIndex).bench;
+                                    let label = ctx.dataset.label + ': ' + ctx.formattedValue + ' ' + unit;
+                                    if (range) {
+                                        label += ' (' + range + ')';
+                                    }
+                                    return label;
+                                },
+                                afterLabel: ctx => {
+                                    const { extra } = pointAt(ctx.datasetIndex, ctx.dataIndex).bench;
+                                    return extra ? '\n' + extra : '';
                                 }
-                                return label;
-                            },
-                            afterLabel: item => {
-                                const { extra } = dataset[item.index].bench;
-                                return extra ? '\n' + extra : '';
                             }
                         }
                     },
@@ -332,9 +338,8 @@ export const DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
                         if (activeElems.length === 0) {
                             return;
                         }
-                        const index = activeElems[0]._index;
-                        const url = dataset[index].commit.url;
-                        window.open(url, '_blank');
+                        const { datasetIndex, index } = activeElems[0];
+                        window.open(pointAt(datasetIndex, index).commit.url, '_blank');
                     },
                     responsive: true, // Make chart responsive
                     maintainAspectRatio: false // Do not maintain original aspect ratio
