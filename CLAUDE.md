@@ -89,6 +89,10 @@ Its only test parses it with `cheerio` + `acorn`, so syntax errors are caught bu
 - `test/config.spec.ts` is stale: it calls `configFromJobInput()` with no argument against the new
   required-parameter signature, so it fails to compile under ts-jest. Expect `npm test` to be red
   there until it is rewritten around the JSON-config-file flow.
+- `npm test` is red on `master` independently of any local change: `config.spec.ts`, `extract.spec.ts`
+  (20 stale snapshots) and `write.spec.ts` fail, 86 tests in total. `npm run lint` likewise reports 42
+  pre-existing `prettier/prettier` errors in `config.ts` and `write.ts`. Compare against a worktree at
+  the merge-base before blaming a change for either.
 
 ## Testing conventions
 
@@ -112,7 +116,20 @@ ESLint enforces `@typescript-eslint/switch-exhaustiveness-check`, so a missed sw
 ## Releasing
 
 `dist/` and `node_modules/` are gitignored on `master` but **must be committed on the release
-branch**, since the action runs `dist/src/index.js` directly. `bash scripts/prepare-release.sh v4`
-builds, prunes to production deps, checks out the release branch (`v4` is current — see the `v4`
-commit in the log), stages `action.yml`, `dist/src/`, the lockfiles and `node_modules`, and leaves
-the commit/tag to you. The script refuses to run unless the tree is clean and you are on `master`.
+branch**, since the action runs `dist/src/index.js` directly. `bash scripts/prepare-release.sh <branch>`
+builds, prunes to production deps, checks out the release branch, stages `action.yml`, `dist/src/`,
+the lockfiles and `node_modules`, and leaves the commit/tag to you. The script refuses to run unless
+the tree is clean and you are on `master`.
+
+**This fork has no release branch yet.** `origin` has only `master`, no branches and no tags, and no
+commit in the history contains `dist/src` — the `v1`…`v4` branches belong to upstream. (`73a11bb` is
+an ordinary source commit whose message happens to be `v4`; it is not a release.) The script assumes
+the branch already exists *and* tracks a remote, since it runs `git checkout "$version"` followed by
+`git pull`, so a first release needs the branch created and pushed before the script will get past
+that point.
+
+Two more things the script does that are easy to miss: it runs `npm install`, not `npm ci`, so it
+rewrites `package-lock.json` in the working tree as a side effect (the committed lockfile is
+`lockfileVersion` 1, and npm 8+ upgrades it to 2), and its `npm run lint` / `npm test` steps are
+commented out, so it validates nothing. Run it under Node 20 — `node_modules` installed by the
+script is what ships on the release branch.

@@ -40,7 +40,15 @@ export async function uploadArchiveToRelease(
 
     let release;
     try {
-        release = (await octokit.rest.repos.createRelease({ owner, repo, tag_name: tag, name: tag })).data;
+        release = (
+            await octokit.rest.repos.createRelease({
+                owner,
+                repo,
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                tag_name: tag,
+                name: tag,
+            })
+        ).data;
         core.debug(`Created release ${tag} in ${owner}/${repo}`);
     } catch (err: any) {
         core.debug(`Could not create release ${tag} (${err.message}); reusing the existing one`);
@@ -50,12 +58,14 @@ export async function uploadArchiveToRelease(
     const name = path.basename(archiveFile);
     const existing = (release.assets ?? []).find((a: { name: string }) => a.name === name);
     if (existing) {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         await octokit.rest.repos.deleteReleaseAsset({ owner, repo, asset_id: existing.id });
     }
 
     await octokit.rest.repos.uploadReleaseAsset({
         owner,
         repo,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         release_id: release.id,
         name,
         data: fs.readFileSync(archiveFile) as unknown as string,
