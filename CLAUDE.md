@@ -4,8 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository
 
-A **fork** (`origin` = `github.com/ldos-project/github-action-benchmark`) of upstream
-`benchmark-action/github-action-benchmark`. `README.md`, `CHANGELOG.md` and `CONTRIBUTING.md` are
+A **fork** (`origin` = `github.com/ldos-project/github-action-benchmark`) of
+`asterinas/github-action-benchmark`, which is itself a fork of upstream
+`benchmark-action/github-action-benchmark`. `master` here descends from asterinas' `04125af`. `README.md`, `CHANGELOG.md` and `CONTRIBUTING.md` are
 largely upstream documents and do **not** describe the fork's behavior — read `src/` first when
 these disagree (see "Fork divergences" below).
 
@@ -118,18 +119,29 @@ ESLint enforces `@typescript-eslint/switch-exhaustiveness-check`, so a missed sw
 `dist/` and `node_modules/` are gitignored on `master` but **must be committed on the release
 branch**, since the action runs `dist/src/index.js` directly. `bash scripts/prepare-release.sh <branch>`
 builds, prunes to production deps, checks out the release branch, stages `action.yml`, `dist/src/`,
-the lockfiles and `node_modules`, and leaves the commit/tag to you. The script refuses to run unless
-the tree is clean and you are on `master`.
+the lockfiles and `node_modules`, then stops so you can inspect — the commit and push are yours.
+The script refuses to run unless the tree is clean and you are on `master`.
 
-**This fork has no release branch yet.** `origin` has only `master`, no branches and no tags, and no
-commit in the history contains `dist/src` — the `v1`…`v4` branches belong to upstream. (`73a11bb` is
-an ordinary source commit whose message happens to be `v4`; it is not a release.) The script assumes
-the branch already exists *and* tracks a remote, since it runs `git checkout "$version"` followed by
-`git pull`, so a first release needs the branch created and pushed before the script will get past
-that point.
+**Releases are branches, not tags.** This lineage has no tags at all: `asterinas` ships `v1`…`v5` as
+branches, and consumers write `uses: <owner>/github-action-benchmark@v1`, which resolves the branch.
+Pushing the branch *is* the deploy, and it updates every consumer immediately — there is no immutable
+ref to pin to. `origin` currently has `master` and `v1` (`73a11bb` on master is an ordinary source
+commit whose message happens to be `v4`; it is not a release).
 
-Two more things the script does that are easy to miss: it runs `npm install`, not `npm ci`, so it
-rewrites `package-lock.json` in the working tree as a side effect (the committed lockfile is
-`lockfileVersion` 1, and npm 8+ upgrades it to 2), and its `npm run lint` / `npm test` steps are
-commented out, so it validates nothing. Run it under Node 20 — `node_modules` installed by the
-script is what ships on the release branch.
+The release branch holds only `action.yml`, `dist/`, `node_modules/`, `package.json` and
+`package-lock.json` — no source. The script expects the target branch to already exist *and* track a
+remote, since it runs `git checkout "$version"` then `git pull`; a brand-new release branch must be
+created and pushed first.
+
+Two things about the script that are easy to miss: `npm prune --production` rewrites
+`package-lock.json` in the working tree (it drops dev dependencies, and on a `lockfileVersion` 1
+lockfile like this one npm 7+ also upgrades the version), which is why the script restores the
+tracked copy before switching branches — remove that restore and the switch aborts on a dirty tree.
+And `npm run lint` / `npm test` are commented out, so a release validates nothing; both are red on
+`master` (see "Fork divergences"), which is why they were disabled — in `147671c` and `70dc443`
+respectively, each by the feature commit that broke them.
+
+Verify a release by rebuilding `master` in a scratch worktree and diffing `dist/src/*.js` against the
+release branch, then running `node dist/src/index.js` against the shipped `node_modules` — it should
+fail with `Input required and not supplied: output-file-path`, which proves every `require()`
+resolved.
